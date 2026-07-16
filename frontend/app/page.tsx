@@ -2118,17 +2118,36 @@ export default function Home() {
 
                           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(360px, 1fr))", gap: "20px" }}>
                             {projectData.characters.map((char: any, idx) => {
-                              const hasImg = !!char.url || mockGeneratedReferenceImages[`char_${char.name}`];
+                              const hasImg = !!(char.url || char.media_id) || mockGeneratedReferenceImages[`char_${char.name}`];
                               const isGen = generatingAssetId === `char_${char.name}`;
                               return (
                                 <div key={idx} className="glass-panel" style={{ padding: 0, overflow: "hidden", display: "flex", flexDirection: "column" }}>
                                   <div style={{ aspectRatio: "16/9", position: "relative", background: "#060910", display: "flex", alignItems: "center", justifyContent: "center" }}>
                                     {hasImg ? (
-                                      <img
-                                        src={char.url || getAssetImage(char.name, 'character')}
-                                        alt={char.name}
-                                        style={{ width: "100%", height: "100%", objectFit: "cover" }}
-                                      />
+                                      <>
+                                        <img
+                                          src={char.url || getAssetImage(char.name, 'character')}
+                                          alt={char.name}
+                                          style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                                        />
+                                        {char.media_id && (
+                                          <span
+                                            style={{
+                                              position: "absolute",
+                                              top: "8px",
+                                              right: "8px",
+                                              fontSize: "0.65rem",
+                                              background: "#10b981",
+                                              color: "#ffffff",
+                                              padding: "2px 6px",
+                                              borderRadius: "4px",
+                                              fontWeight: 700
+                                            }}
+                                          >
+                                            ✓ Đã có ID
+                                          </span>
+                                        )}
+                                      </>
                                     ) : (
                                       <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "10px" }}>
                                       <span style={{ fontSize: "2rem" }}>👤</span>
@@ -2184,17 +2203,36 @@ export default function Home() {
                       ) : (
                         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(360px, 1fr))", gap: "20px" }}>
                           {projectData.environments.map((env: any, idx) => {
-                            const hasImg = !!env.url || mockGeneratedReferenceImages[`env_${env.setting_name}`];
+                            const hasImg = !!(env.url || env.media_id) || mockGeneratedReferenceImages[`env_${env.setting_name}`];
                             const isGen = generatingAssetId === `env_${env.setting_name}`;
                             return (
                               <div key={idx} className="glass-panel" style={{ padding: 0, overflow: "hidden", display: "flex", flexDirection: "column" }}>
                                 <div style={{ aspectRatio: "16/9", position: "relative", background: "#060910", display: "flex", alignItems: "center", justifyContent: "center" }}>
                                   {hasImg ? (
-                                    <img
-                                      src={env.url || getAssetImage(env.setting_name, 'environment')}
-                                      alt={env.setting_name}
-                                      style={{ width: "100%", height: "100%", objectFit: "cover" }}
-                                    />
+                                    <>
+                                      <img
+                                        src={env.url || getAssetImage(env.setting_name, 'environment')}
+                                        alt={env.setting_name}
+                                        style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                                      />
+                                      {env.media_id && (
+                                        <span
+                                          style={{
+                                            position: "absolute",
+                                            top: "8px",
+                                            right: "8px",
+                                            fontSize: "0.65rem",
+                                            background: "#10b981",
+                                            color: "#ffffff",
+                                            padding: "2px 6px",
+                                            borderRadius: "4px",
+                                            fontWeight: 700
+                                          }}
+                                        >
+                                          ✓ Đã có ID
+                                        </span>
+                                      )}
+                                    </>
                                   ) : (
                                     <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "10px" }}>
                                       <span style={{ fontSize: "2rem" }}>🏞️</span>
@@ -2249,17 +2287,36 @@ export default function Home() {
                       ) : (
                         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(360px, 1fr))", gap: "20px" }}>
                           {projectData.props.map((prop: any, idx) => {
-                            const hasImg = mockGeneratedReferenceImages[`prop_${prop.prop_name}`];
+                            const hasImg = !!(prop.url || prop.media_id) || mockGeneratedReferenceImages[`prop_${prop.prop_name}`];
                             const isGen = generatingAssetId === `prop_${prop.prop_name}`;
                             return (
                               <div key={idx} className="glass-panel" style={{ padding: 0, overflow: "hidden", display: "flex", flexDirection: "column" }}>
                                 <div style={{ aspectRatio: "16/9", position: "relative", background: "#060910", display: "flex", alignItems: "center", justifyContent: "center" }}>
                                   {hasImg ? (
-                                    <img
-                                      src={prop.url || getAssetImage(prop.prop_name, 'prop')}
-                                      alt={prop.prop_name}
-                                      style={{ width: "100%", height: "100%", objectFit: "cover" }}
-                                    />
+                                    <>
+                                      <img
+                                        src={prop.url || getAssetImage(prop.prop_name, 'prop')}
+                                        alt={prop.prop_name}
+                                        style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                                      />
+                                      {prop.media_id && (
+                                        <span
+                                          style={{
+                                            position: "absolute",
+                                            top: "8px",
+                                            right: "8px",
+                                            fontSize: "0.65rem",
+                                            background: "#10b981",
+                                            color: "#ffffff",
+                                            padding: "2px 6px",
+                                            borderRadius: "4px",
+                                            fontWeight: 700
+                                          }}
+                                        >
+                                          ✓ Đã có ID
+                                        </span>
+                                      )}
+                                    </>
                                   ) : (
                                     <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "10px" }}>
                                       <span style={{ fontSize: "2rem" }}>🎒</span>
@@ -2400,7 +2457,17 @@ export default function Home() {
                                     </span>
                                     <div style={{ display: "flex", flexWrap: "wrap", gap: "12px" }}>
                                       {refs.map((ref, refIdx) => {
-                                        const hasAssetImg = mockGeneratedReferenceImages[ref.key];
+                                        // Resolve asset info from projectData to check url or media_id
+                                        let assetData = null;
+                                        if (ref.type === "character") {
+                                          assetData = projectData.characters.find(c => c.name.toLowerCase() === ref.name.toLowerCase());
+                                        } else if (ref.type === "environment") {
+                                          assetData = projectData.environments.find(e => e.setting_name.toLowerCase() === ref.name.toLowerCase());
+                                        } else if (ref.type === "prop") {
+                                          assetData = projectData.props.find(p => p.prop_name.toLowerCase() === ref.name.toLowerCase());
+                                        }
+
+                                        const hasAssetImg = !!(assetData?.url || assetData?.media_id) || mockGeneratedReferenceImages[ref.key];
                                         const isGen = generatingAssetId === ref.key;
                                         const typeColor = ref.type === "character" ? "#a78bfa" : ref.type === "environment" ? "#06b6d4" : "#f59e0b";
                                         const typeLabel = ref.type === "character" ? "Nhân vật" : ref.type === "environment" ? "Bối cảnh" : "Đạo cụ";
@@ -2436,11 +2503,30 @@ export default function Home() {
                                               }}
                                             >
                                               {hasAssetImg ? (
-                                                <img
-                                                  src={ref.url || getAssetImage(ref.name, ref.type)}
-                                                  alt={ref.name}
-                                                  style={{ width: "100%", height: "100%", objectFit: "cover" }}
-                                                />
+                                                <>
+                                                  <img
+                                                    src={(assetData?.url) || getAssetImage(ref.name, ref.type)}
+                                                    alt={ref.name}
+                                                    style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                                                  />
+                                                  {assetData?.media_id && (
+                                                    <span
+                                                      style={{
+                                                        position: "absolute",
+                                                        top: "2px",
+                                                        right: "2px",
+                                                        fontSize: "0.55rem",
+                                                        background: "#10b981",
+                                                        color: "#ffffff",
+                                                        padding: "1px 4px",
+                                                        borderRadius: "2px",
+                                                        fontWeight: 700
+                                                      }}
+                                                    >
+                                                      ✓ ID
+                                                    </span>
+                                                  )}
+                                                </>
                                               ) : (
                                                 <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", width: "100%", height: "100%" }}>
                                                   {isGen ? (
