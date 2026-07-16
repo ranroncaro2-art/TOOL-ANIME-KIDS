@@ -894,10 +894,9 @@ export default function Home() {
     try {
       const payload: any = {
         prompt: promptText,
-        count: 1,
-        aspect_ratio: "IMAGE_ASPECT_RATIO_LANDSCAPE",
-        model: "GEM_PIX_2",
-        for_video: true
+        count: imageCount || 1,
+        aspect_ratio: imageAspectRatio || "IMAGE_ASPECT_RATIO_LANDSCAPE",
+        model: imageModel || "GEM_PIX_2"
       };
 
       if (mediaIds && mediaIds.length > 0) {
@@ -927,8 +926,9 @@ export default function Home() {
       }
     } catch (err: any) {
       console.warn("Local Image API offline or failed, falling back to mock. Error:", err.message);
+      // Fallback: Use anime placeholder URL so persistence on reload is active even when offline
       return {
-        url: "",
+        url: "https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?w=400&auto=format&fit=crop&q=80",
         media_id: `mock_media_${Math.random().toString(36).substring(2, 11)}`,
         account_id: "mock_account"
       };
