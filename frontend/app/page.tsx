@@ -199,8 +199,8 @@ export default function Home() {
   // Mock Generation previews for Asset References & Shots
   const [mockGeneratedReferenceImages, setMockGeneratedReferenceImages] = useState<Record<string, boolean>>({});
   const [mockGeneratedShotImages, setMockGeneratedShotImages] = useState<Record<string, boolean>>({});
-  const [generatingAssetId, setGeneratingAssetId] = useState<string | null>(null);
-  const [generatingShotKey, setGeneratingShotKey] = useState<string | null>(null);
+  const [generatingAssetIds, setGeneratingAssetIds] = useState<Record<string, boolean>>({});
+  const [generatingShotKeys, setGeneratingShotKeys] = useState<Record<string, boolean>>({});
 
   // Video Rendering preview state
   const [isRenderingVideo, setIsRenderingVideo] = useState<boolean>(false);
@@ -217,7 +217,7 @@ export default function Home() {
   // Video Segment rendering states
   const [selectedShots, setSelectedShots] = useState<Record<string, boolean>>({});
   const [mockGeneratedSegmentVideos, setMockGeneratedSegmentVideos] = useState<Record<string, boolean>>({});
-  const [generatingSegmentVideoKey, setGeneratingSegmentVideoKey] = useState<string | null>(null);
+  const [generatingSegmentVideoKeys, setGeneratingSegmentVideoKeys] = useState<Record<string, boolean>>({});
 
   // Helper to update projectData directly in IndexedDB for isolation
   const updateProjectDataInDb = async (projectId: string, updateFn: (data: ProjectData) => ProjectData) => {
@@ -938,7 +938,7 @@ export default function Home() {
   // Reference image generator trigger
   const triggerGenerateAssetImage = async (id: string) => {
     const startedProjectId = activeProjectId;
-    setGeneratingAssetId(id);
+    setGeneratingAssetIds(prev => ({ ...prev, [id]: true }));
     queueManager.addLog(`Bắt đầu vẽ ảnh tham chiếu cho Asset: ${id}...`, "running", startedProjectId);
     
     let promptText = "";
@@ -983,13 +983,17 @@ export default function Home() {
     } catch (err: any) {
       queueManager.addLog(`Lỗi vẽ ảnh Asset: ${err.message}`, "error", startedProjectId);
     } finally {
-      setGeneratingAssetId(null);
+      setGeneratingAssetIds(prev => {
+        const copy = { ...prev };
+        delete copy[id];
+        return copy;
+      });
     }
   };
 
   const triggerGenerateShotImage = async (key: string) => {
     const startedProjectId = activeProjectId;
-    setGeneratingShotKey(key);
+    setGeneratingShotKeys(prev => ({ ...prev, [key]: true }));
     queueManager.addLog(`Bắt đầu vẽ ảnh cho Shot: ${key}...`, "running", startedProjectId);
 
     const parts = key.split("_");
@@ -1049,13 +1053,17 @@ export default function Home() {
     } catch (err: any) {
       queueManager.addLog(`Lỗi vẽ ảnh cho Shot ${shotId}: ${err.message}`, "error", startedProjectId);
     } finally {
-      setGeneratingShotKey(null);
+      setGeneratingShotKeys(prev => {
+        const copy = { ...prev };
+        delete copy[key];
+        return copy;
+      });
     }
   };
 
   const triggerGenerateSegmentVideo = async (shotKey: string) => {
     const startedProjectId = activeProjectId;
-    setGeneratingSegmentVideoKey(shotKey);
+    setGeneratingSegmentVideoKeys(prev => ({ ...prev, [shotKey]: true }));
     queueManager.addLog(`Bắt đầu gọi API local render video phân đoạn: ${shotKey}...`, "running", startedProjectId);
 
     const parts = shotKey.split("_");
@@ -1152,7 +1160,11 @@ export default function Home() {
       setMockGeneratedSegmentVideos(prev => ({ ...prev, [shotKey]: true }));
       queueManager.addLog(`Render video Shot ${shotId} thất bại (offline/error), sử dụng video mẫu.`, "info", startedProjectId);
     } finally {
-      setGeneratingSegmentVideoKey(null);
+      setGeneratingSegmentVideoKeys(prev => {
+        const copy = { ...prev };
+        delete copy[shotKey];
+        return copy;
+      });
     }
   };
 
@@ -2134,7 +2146,7 @@ export default function Home() {
                           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(360px, 1fr))", gap: "20px" }}>
                             {projectData.characters.map((char: any, idx) => {
                               const hasImg = !!(char.url || char.media_id) || mockGeneratedReferenceImages[`char_${char.name}`];
-                              const isGen = generatingAssetId === `char_${char.name}`;
+                              const isGen = !!generatingAssetIds[`char_${char.name}`];
                               return (
                                 <div key={idx} className="glass-panel" style={{ padding: 0, overflow: "hidden", display: "flex", flexDirection: "column" }}>
                                   <div style={{ aspectRatio: "16/9", position: "relative", background: "#060910", display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -2219,7 +2231,7 @@ export default function Home() {
                         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(360px, 1fr))", gap: "20px" }}>
                           {projectData.environments.map((env: any, idx) => {
                             const hasImg = !!(env.url || env.media_id) || mockGeneratedReferenceImages[`env_${env.setting_name}`];
-                            const isGen = generatingAssetId === `env_${env.setting_name}`;
+                            const isGen = !!generatingAssetIds[`env_${env.setting_name}`];
                             return (
                               <div key={idx} className="glass-panel" style={{ padding: 0, overflow: "hidden", display: "flex", flexDirection: "column" }}>
                                 <div style={{ aspectRatio: "16/9", position: "relative", background: "#060910", display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -2303,7 +2315,7 @@ export default function Home() {
                         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(360px, 1fr))", gap: "20px" }}>
                           {projectData.props.map((prop: any, idx) => {
                             const hasImg = !!(prop.url || prop.media_id) || mockGeneratedReferenceImages[`prop_${prop.prop_name}`];
-                            const isGen = generatingAssetId === `prop_${prop.prop_name}`;
+                            const isGen = !!generatingAssetIds[`prop_${prop.prop_name}`];
                             return (
                               <div key={idx} className="glass-panel" style={{ padding: 0, overflow: "hidden", display: "flex", flexDirection: "column" }}>
                                 <div style={{ aspectRatio: "16/9", position: "relative", background: "#060910", display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -2404,7 +2416,7 @@ export default function Home() {
                         const keyframePrompt = keyframeObj?.keyframe_image_prompt || "";
                         const keyframeUrl = keyframeObj?.url || "";
                         const hasImg = !!keyframeUrl || mockGeneratedShotImages[shotKey];
-                        const isGen = generatingShotKey === shotKey;
+                        const isGen = !!generatingShotKeys[shotKey];
 
                         return (
                           <div key={idx} className="glass-panel" style={{ padding: "16px", display: "grid", gridTemplateColumns: "180px 1fr", gap: "16px", alignItems: "start" }}>
@@ -2483,7 +2495,7 @@ export default function Home() {
                                         }
 
                                         const hasAssetImg = !!(assetData?.url || assetData?.media_id) || mockGeneratedReferenceImages[ref.key];
-                                        const isGen = generatingAssetId === ref.key;
+                                        const isGen = !!generatingAssetIds[ref.key];
                                         const typeColor = ref.type === "character" ? "#a78bfa" : ref.type === "environment" ? "#06b6d4" : "#f59e0b";
                                         const typeLabel = ref.type === "character" ? "Nhân vật" : ref.type === "environment" ? "Bối cảnh" : "Đạo cụ";
                                         
@@ -2857,7 +2869,7 @@ export default function Home() {
                           : "";
                         
                         const hasVideo = !!videoUrl || mockGeneratedSegmentVideos[shotKey] || isVideoGenerated;
-                        const isGenVideo = generatingSegmentVideoKey === shotKey;
+                        const isGenVideo = !!generatingSegmentVideoKeys[shotKey];
                         
                         return (
                           <div
