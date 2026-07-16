@@ -1,0 +1,15 @@
+# Python environment and build cache
+backend/venv/
+backend/__pycache__/
+backend/*.pyc
+
+# Node modules and Next.js production build files
+frontend/node_modules/
+frontend/.next/
+frontend/out/
+
+# IDE files, system logs, and OS caches
+.gemini/
+*.log
+.DS_Store
+Thumbs.db
