@@ -1343,16 +1343,26 @@ export default function Home() {
     const actionsLower = (shot.actions || "").toLowerCase();
     
     // Check characters
+    const shotChars = shot.characters || [];
     projectData.characters.forEach(char => {
-      if (char.name && actionsLower.includes(char.name.toLowerCase())) {
+      if (
+        char.name && 
+        (actionsLower.includes(char.name.toLowerCase()) || 
+         shotChars.some((c: any) => String(c).toLowerCase().includes(char.name.toLowerCase()) || char.name.toLowerCase().includes(String(c).toLowerCase())))
+      ) {
         refs.push({ name: char.name, type: 'character', key: `char_${char.name}`, url: char.url });
       }
     });
 
     // Check setting matching environments
-    const settingLower = (shot.setting || "").toLowerCase();
+    const settingLower = (shot.setting || shot.environment || "").toLowerCase();
     projectData.environments.forEach(env => {
-      if (env.setting_name && (settingLower.includes(env.setting_name.toLowerCase()) || actionsLower.includes(env.setting_name.toLowerCase()))) {
+      if (
+        env.setting_name && 
+        (settingLower.includes(env.setting_name.toLowerCase()) || 
+         env.setting_name.toLowerCase().includes(settingLower) || 
+         actionsLower.includes(env.setting_name.toLowerCase()))
+      ) {
         if (!refs.some(r => r.name === env.setting_name)) {
           refs.push({ name: env.setting_name, type: 'environment', key: `env_${env.setting_name}`, url: env.url });
         }
@@ -1360,8 +1370,13 @@ export default function Home() {
     });
 
     // Check props
+    const shotProps = shot.props || [];
     projectData.props.forEach(prop => {
-      if (prop.prop_name && actionsLower.includes(prop.prop_name.toLowerCase())) {
+      if (
+        prop.prop_name && 
+        (actionsLower.includes(prop.prop_name.toLowerCase()) || 
+         shotProps.some((p: any) => String(p).toLowerCase().includes(prop.prop_name.toLowerCase()) || prop.prop_name.toLowerCase().includes(String(p).toLowerCase())))
+      ) {
         if (!refs.some(r => r.name === prop.prop_name)) {
           refs.push({ name: prop.prop_name, type: 'prop', key: `prop_${prop.prop_name}`, url: prop.url });
         }
