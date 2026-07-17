@@ -46,8 +46,16 @@ export async function POST(req: NextRequest) {
     // Python script path
     const scriptPath = path.join(process.cwd(), "..", "backend", "video_compiler.py");
 
-    // Spawning Python
-    const pythonExe = process.platform === "win32" ? "python" : "python3";
+    // Spawning Python - Check if virtual environment python exists, otherwise fall back to system python
+    let pythonExe = process.platform === "win32" ? "python" : "python3";
+    const venvPythonPath = path.join(process.cwd(), "..", "backend", "venv", "Scripts", "python.exe");
+    const venvPythonUnix = path.join(process.cwd(), "..", "backend", "venv", "bin", "python");
+    
+    if (fs.existsSync(venvPythonPath)) {
+      pythonExe = venvPythonPath;
+    } else if (fs.existsSync(venvPythonUnix)) {
+      pythonExe = venvPythonUnix;
+    }
     
     const args = [
       scriptPath,
