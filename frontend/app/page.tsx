@@ -2124,6 +2124,62 @@ export default function Home() {
       alert("Vui lòng tạo danh sách shot trước khi render.");
       return;
     }
+
+    // Scan videos directory first to verify all shots possess a compiled video segment
+    let scanData;
+    try {
+      const scanRes = await fetch("/api/scan-assets", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ pcDirectory: projectData.pcDirectory })
+      });
+      if (!scanRes.ok) {
+        throw new Error("Không thể quét thư mục assets để xác thực.");
+      }
+      scanData = await scanRes.json();
+    } catch (err: any) {
+      alert(`Lỗi quét xác thực video phân đoạn: ${err.message}`);
+      return;
+    }
+
+    const scannedVideos = scanData.videos || [];
+    const missingShots: string[] = [];
+
+    const getBaseName = (filename: string) => {
+      const parts = filename.split(".");
+      if (parts.length > 1) parts.pop();
+      return parts.join(".").toLowerCase().trim();
+    };
+
+    const isShotMatch = (filename: string, shotId: string) => {
+      const base = getBaseName(filename);
+      const sId = shotId.toLowerCase().trim();
+      if (base === sId) return true;
+      if (base === `shot_${sId}`) return true;
+      if (base === `shot_${sId.padStart(3, '0')}`) return true;
+      
+      const numOnlyBase = base.replace(/[^0-9]/g, "");
+      const numOnlyId = sId.replace(/[^0-9]/g, "");
+      if (numOnlyBase && numOnlyId && parseInt(numOnlyBase, 10) === parseInt(numOnlyId, 10)) {
+        return true;
+      }
+      return false;
+    };
+
+    // Check if every shot has a matching video segment file in the local videos directory
+    projectData.shots.forEach((shot: any) => {
+      const hasMatch = scannedVideos.some((f: any) => isShotMatch(f.name, shot.shot_id));
+      if (!hasMatch) {
+        missingShots.push(shot.shot_id);
+      }
+    });
+
+    if (missingShots.length > 0) {
+      const msg = `Không thể xuất video! Thiếu video của các phân cảnh: ${missingShots.join(", ")}. Số lượng video phân đoạn phải bằng số lượng phân cảnh (${projectData.shots.length} shots) đã phân tích.`;
+      alert(msg);
+      queueManager.addLog(msg, "error", activeProjectId);
+      return;
+    }
     
     setIsRenderingVideo(true);
     setVideoRenderPercent(0);
