@@ -562,6 +562,10 @@ class BackgroundQueueManager {
         await runAndSave("prop_extractor");
         // Step 5: Plan Shots
         await runAndSave("shot_planner");
+        // Step 6: Generate Keyframe Prompts
+        await runAndSave("keyframe_generator");
+        // Step 7: Generate Motion Prompts
+        await runAndSave("motion_generator");
 
         const finalState: ProjectTaskState = {
           projectId,

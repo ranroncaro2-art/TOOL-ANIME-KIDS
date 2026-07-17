@@ -2915,7 +2915,9 @@ export default function Home() {
         "character_extractor",
         "environment_extractor",
         "prop_extractor",
-        "shot_planner"
+        "shot_planner",
+        "keyframe_generator",
+        "motion_generator"
       ];
       
       const combo1Order: StepKey[] = [
