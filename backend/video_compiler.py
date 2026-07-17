@@ -184,6 +184,21 @@ def download_resource(url, temp_dir):
     """Download web resource to local temp cache, or returns local file path if valid."""
     if not url:
         return None
+        
+    # Support decoding local file paths served via our media streaming API endpoint
+    if "/api/media?path=" in url:
+        try:
+            import urllib.parse
+            parsed = urllib.parse.urlparse(url)
+            query_params = urllib.parse.parse_qs(parsed.query)
+            path_param = query_params.get("path")
+            if path_param and path_param[0]:
+                local_path = path_param[0]
+                if os.path.exists(local_path):
+                    return local_path
+        except Exception as e:
+            print(f"Error parsing local media api path from {url}: {e}", file=sys.stderr)
+
     if not url.startswith("http://") and not url.startswith("https://"):
         if os.path.exists(url):
             return url
