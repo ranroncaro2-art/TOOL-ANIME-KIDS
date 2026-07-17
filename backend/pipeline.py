@@ -344,7 +344,7 @@ async def run_shot_planner(
         "3. Timeline:\n"
         "   - Generate a chronological breakdown of actions in seconds, matching the shot duration. Example:\n"
         "     [{\"time\": \"0-2\", \"action\": \"Lisa walks toward camera\"}, {\"time\": \"2-6\", \"action\": \"Lisa speaks\"}, {\"time\": \"6-8\", \"action\": \"Lisa smiles\"}]\n"
-        "   - CRITICAL DIALOGUE DURATION RULE: For any dialogue action (e.g. 'Character speaks ...' or 'Character talks...'), you MUST allocate at least 3 to 4 seconds (or more for longer sentences) in the timeline. Speaking segments must NEVER be shorter than 3 seconds (e.g. do NOT use 2s or 1s intervals for dialogues) to prevent characters from being cut off mid-speech.\n\n"
+        "   - CRITICAL DIALOGUE DURATION RULE: For any dialogue action (e.g. 'Character speaks ...' or 'Character talks...'), you MUST allocate a reasonable duration based on character count: average speaking speed is roughly 15 English characters per second (including spaces). Calculate speaking duration as: ceil(character_count / 15) + 1 second of buffer for natural pauses. Speaking segments must NEVER be shorter than 3 seconds (e.g. if the formula yields less than 3, default to 3 seconds) to prevent characters from being cut off mid-speech. For example, if a dialogue has 33 characters, allocate 33/15 + 1 = 3.2s -> round up to 4 seconds in the timeline.\n\n"
         "4. Motion Details:\n"
         "   - primary_motion: The main motion of the character (e.g. 'Walk') in English.\n"
         "   - secondary_motion: List of secondary/idle motions, e.g. ['Blink', 'Breathing'].\n"
