@@ -18,6 +18,13 @@ import numpy as np
 import subprocess
 from PIL import Image, ImageDraw, ImageFont
 
+FFMPEG_PATH = "ffmpeg"
+try:
+    import imageio_ffmpeg
+    FFMPEG_PATH = imageio_ffmpeg.get_ffmpeg_exe()
+except ImportError:
+    pass
+
 def get_system_font(size):
     """Find a standard TrueType font that supports CJK and Vietnamese characters."""
     font_paths = [
@@ -222,13 +229,13 @@ def prepare_shot_audio(video_path, duration, out_wav_path):
 
     if has_audio:
         cmd = [
-            'ffmpeg', '-y', '-i', video_path, '-vn',
+            FFMPEG_PATH, '-y', '-i', video_path, '-vn',
             '-filter_complex', f'aresample=async=1,atrim=0:{duration},apad=whole_dur={duration}',
             '-c:a', 'pcm_s16le', '-ar', '44100', '-ac', '2', out_wav_path
         ]
     else:
         cmd = [
-            'ffmpeg', '-y', '-f', 'lavfi', '-i', 'anullsrc=r=44100:cl=stereo',
+            FFMPEG_PATH, '-y', '-f', 'lavfi', '-i', 'anullsrc=r=44100:cl=stereo',
             '-t', str(duration), '-c:a', 'pcm_s16le', out_wav_path
         ]
         
@@ -239,7 +246,7 @@ def prepare_shot_audio(video_path, duration, out_wav_path):
         print(f"Error preparing audio for {video_path}: {e}", file=sys.stderr)
         try:
             cmd_fallback = [
-                'ffmpeg', '-y', '-f', 'lavfi', '-i', 'anullsrc=r=44100:cl=stereo',
+                FFMPEG_PATH, '-y', '-f', 'lavfi', '-i', 'anullsrc=r=44100:cl=stereo',
                 '-t', str(duration), '-c:a', 'pcm_s16le', out_wav_path
             ]
             subprocess.run(cmd_fallback, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True)
@@ -251,7 +258,7 @@ def check_nvenc_support():
     """Verify if NVIDIA NVENC is supported by running a fast encoding dry-run."""
     try:
         cmd = [
-            'ffmpeg', '-y', '-f', 'lavfi', '-i', 'color=c=black:s=64x64:d=1',
+            FFMPEG_PATH, '-y', '-f', 'lavfi', '-i', 'color=c=black:s=64x64:d=1',
             '-vcodec', 'h264_nvenc', '-f', 'null', '-'
         ]
         res = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=4)
@@ -339,7 +346,7 @@ def main():
                 f.write(f"file '{wav_path.replace(os.sep, '/')}'\n")
         
         concat_cmd = [
-            'ffmpeg', '-y', '-f', 'concat', '-safe', '0',
+            FFMPEG_PATH, '-y', '-f', 'concat', '-safe', '0',
             '-i', concat_list_path, '-c', 'copy', master_wav_path
         ]
         res = subprocess.run(concat_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -356,7 +363,7 @@ def main():
         if has_nvenc:
             print("GPU Hardware Acceleration Detected (h264_nvenc). Optimizing rendering speed...", flush=True)
             ffmpeg_cmd = [
-                'ffmpeg', '-y',
+                FFMPEG_PATH, '-y',
                 '-f', 'rawvideo', '-vcodec', 'rawvideo',
                 '-pix_fmt', 'bgr24', '-s', f'{args.width}x{args.height}', '-r', str(fps),
                 '-i', '-',  # Input 0: video from stdin
@@ -369,7 +376,7 @@ def main():
         else:
             print("GPU NVENC not available. Falling back to multi-threaded CPU rendering (libx264)...", flush=True)
             ffmpeg_cmd = [
-                'ffmpeg', '-y',
+                FFMPEG_PATH, '-y',
                 '-f', 'rawvideo', '-vcodec', 'rawvideo',
                 '-pix_fmt', 'bgr24', '-s', f'{args.width}x{args.height}', '-r', str(fps),
                 '-i', '-',  # Input 0: video from stdin
@@ -384,7 +391,7 @@ def main():
         if has_nvenc:
             print("GPU Hardware Acceleration Detected (h264_nvenc). Optimizing rendering speed (no audio)...", flush=True)
             ffmpeg_cmd = [
-                'ffmpeg', '-y', '-f', 'rawvideo', '-vcodec', 'rawvideo',
+                FFMPEG_PATH, '-y', '-f', 'rawvideo', '-vcodec', 'rawvideo',
                 '-pix_fmt', 'bgr24', '-s', f'{args.width}x{args.height}', '-r', str(fps),
                 '-i', '-', '-vcodec', 'h264_nvenc', '-pix_fmt', 'yuv420p',
                 '-preset', 'fast', '-b:v', '5M', args.output
@@ -392,7 +399,7 @@ def main():
         else:
             print("GPU NVENC not available. Falling back to multi-threaded CPU rendering (libx264) (no audio)...", flush=True)
             ffmpeg_cmd = [
-                'ffmpeg', '-y', '-f', 'rawvideo', '-vcodec', 'rawvideo',
+                FFMPEG_PATH, '-y', '-f', 'rawvideo', '-vcodec', 'rawvideo',
                 '-pix_fmt', 'bgr24', '-s', f'{args.width}x{args.height}', '-r', str(fps),
                 '-i', '-', '-vcodec', 'libx264', '-pix_fmt', 'yuv420p',
                 '-preset', 'medium', '-crf', '21', '-threads', '0', args.output
