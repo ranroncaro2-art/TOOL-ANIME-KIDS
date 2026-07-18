@@ -385,7 +385,7 @@ export default function Home() {
   const [apiKeys, setApiKeys] = useState<string[]>([]);
   const [selectedModel, setSelectedModel] = useState("gemini-2.5-flash");
   const [rpmLimit, setRpmLimit] = useState(5);
-  const [chunkSize, setChunkSize] = useState(3);
+  const [chunkSize, setChunkSize] = useState(5);
   
   const [projectData, setProjectData] = useState<ProjectData>(INITIAL_PROJECT_DATA);
   const [steps, setSteps] = useState<PipelineStep[]>(INITIAL_STEPS);
@@ -842,7 +842,7 @@ export default function Home() {
 
     const savedChunkSize = localStorage.getItem("gemini_chunk_size");
     if (savedChunkSize) {
-      setChunkSize(parseInt(savedChunkSize) || 3);
+      setChunkSize(parseInt(savedChunkSize) || 5);
     }
 
     const savedImgCount = localStorage.getItem("local_image_count");
@@ -4270,8 +4270,26 @@ export default function Home() {
 
                             <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
                               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                                <h4 style={{ color: "#a78bfa", fontSize: "0.9rem" }}>
+                                <h4 style={{ color: "#a78bfa", fontSize: "0.9rem", display: "flex", alignItems: "center", gap: "8px", margin: 0 }}>
                                   Scene {shot.scene_id} - Shot {String(shot.shot_id).replace('Shot', '')}
+                                  <div style={{ display: "inline-flex", alignItems: "center", gap: "4px", background: "rgba(255,255,255,0.05)", padding: "2px 6px", borderRadius: "4px", border: "1px solid rgba(255,255,255,0.1)" }}>
+                                    <span style={{ fontSize: "0.7rem", color: "var(--text-muted)" }}>Thời lượng:</span>
+                                    <input
+                                      type="number"
+                                      value={shot.duration_seconds || 5}
+                                      min={1}
+                                      max={8}
+                                      onChange={(e) => {
+                                        const val = Math.min(8, Math.max(1, Number(e.target.value) || 1));
+                                        const updatedShots = projectData.shots.map((s: any) => 
+                                          s.shot_id === shot.shot_id ? { ...s, duration_seconds: val } : s
+                                        );
+                                        handleUpdateStepData("shot_planner", updatedShots);
+                                      }}
+                                      style={{ width: "45px", background: "transparent", border: "none", color: "#10b981", fontSize: "0.75rem", fontWeight: "bold", outline: "none", padding: 0, textAlign: "center" }}
+                                    />
+                                    <span style={{ fontSize: "0.7rem", color: "var(--text-muted)" }}>s</span>
+                                  </div>
                                 </h4>
                                 <span style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>
                                   Camera: {shot.framing} | {shot.camera_movement}
@@ -4757,8 +4775,8 @@ export default function Home() {
                             }}
                           >
                             {/* Column 1: Checkbox selector & ID */}
-                            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", borderRight: "1px solid rgba(255,255,255,0.05)", paddingRight: "12px", gap: "8px" }}>
-                              <span style={{ fontSize: "0.68rem", color: "var(--text-muted)", fontWeight: 700 }}>CHỌN</span>
+                            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", borderRight: "1px solid rgba(255,255,255,0.05)", paddingRight: "12px", gap: "6px" }}>
+                              <span style={{ fontSize: "0.68rem", color: "var(--text-muted)", fontWeight: 700, marginBottom: "2px" }}>CHỌN</span>
                               <input
                                 type="checkbox"
                                 checked={!!selectedShots[shotKey]}
@@ -4768,15 +4786,41 @@ export default function Home() {
                                 style={{ width: "16px", height: "16px", cursor: "pointer", accentColor: "#a78bfa" }}
                               />
                               <span style={{ fontSize: "0.85rem", color: "#a78bfa", fontFamily: "var(--font-mono)", fontWeight: 700 }}>
-                                #{String(shot.scene_number || shot.scene_id || '').padStart(2, '0')}
+                                #{String(idx + 1).padStart(2, '0')}
                               </span>
+                              
+                              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "2px", marginTop: "6px", width: "100%" }}>
+                                <span style={{ fontSize: "0.55rem", color: "var(--text-muted)", fontWeight: 600 }}>GIÂY</span>
+                                <div style={{ display: "flex", alignItems: "center", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "4px", padding: "2px 4px", width: "55px", justifyContent: "center" }}>
+                                  <input
+                                    type="number"
+                                    value={shot.duration_seconds || 5}
+                                    min={1}
+                                    max={8}
+                                    onChange={(e) => {
+                                      const val = Math.min(8, Math.max(1, Number(e.target.value) || 1));
+                                      const updatedShots = projectData.shots.map((s: any) => 
+                                        s.shot_id === shot.shot_id ? { ...s, duration_seconds: val } : s
+                                      );
+                                      handleUpdateStepData("shot_planner", updatedShots);
+                                    }}
+                                    style={{ width: "28px", background: "transparent", border: "none", color: "#10b981", fontSize: "0.75rem", fontWeight: "bold", textAlign: "center", outline: "none", padding: 0 }}
+                                  />
+                                  <span style={{ fontSize: "0.65rem", color: "var(--text-muted)" }}>s</span>
+                                </div>
+                              </div>
                             </div>
 
                             {/* Column 2: Motion Prompt Description */}
                             <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-                              <span style={{ fontSize: "0.7rem", color: "var(--text-muted)", fontWeight: 700 }}>
-                                MÔ TẢ CHUYỂN ĐỘNG (MOTION PROMPT)
-                              </span>
+                              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                                <span style={{ fontSize: "0.7rem", color: "var(--text-muted)", fontWeight: 700 }}>
+                                  MÔ TẢ CHUYỂN ĐỘNG (MOTION PROMPT)
+                                </span>
+                                <span style={{ color: "#a78bfa", fontSize: "0.75rem", fontWeight: 700, fontFamily: "var(--font-mono)" }}>
+                                  Scene {shot.scene_id} - Shot {String(shot.shot_id).replace('Shot', '')}
+                                </span>
+                              </div>
                               <textarea
                                 value={motionText}
                                 onChange={(e) => {

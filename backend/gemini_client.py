@@ -175,58 +175,88 @@ async def generate_gemini_content(
         # Rotate through API keys
         for index, api_key in enumerate(api_keys):
             masked_key = f"{api_key[:8]}...{api_key[-4:]}" if len(api_key) > 12 else "INVALID_KEY_FORMAT"
-            logger.info(f"Attempting API request using key index {index} ({masked_key}) with model '{current_model}'...")
             
             headers = {
                 "Content-Type": "application/json",
                 "x-goog-api-key": api_key
             }
             
-            try:
-                # Enforce rate limits (Requests Per Minute)
-                await enforce_rate_limit(rpm_limit)
-                
-                async with httpx.AsyncClient(timeout=60.0) as client:
-                    response = await client.post(url, headers=headers, json=payload)
+            max_retries = 3
+            backoff_factor = 2.0
+            initial_delay = 3.0
+            
+            for retry in range(max_retries + 1):
+                try:
+                    # Enforce rate limits (Requests Per Minute)
+                    await enforce_rate_limit(rpm_limit)
                     
-                    if response.status_code == 200:
-                        data = response.json()
-                        
-                        # Check for promptFeedback block (safety/prohibited content)
-                        prompt_feedback = data.get("promptFeedback", {})
-                        block_reason = prompt_feedback.get("blockReason")
-                        if block_reason:
-                            raise PromptBlocked(block_reason, data)
-                        
-                        candidates = data.get("candidates", [])
-                        if candidates and len(candidates) > 0:
-                            candidate = candidates[0]
-                            finish_reason = candidate.get("finishReason")
-                            if finish_reason and finish_reason not in ("STOP", "MAX_TOKENS"):
-                                raise PromptBlocked(finish_reason, data)
-                            
-                            parts = candidate.get("content", {}).get("parts", [])
-                            if parts and len(parts) > 0:
-                                text = parts[0].get("text", "")
-                                logger.info(f"API request succeeded with key index {index} using model '{current_model}'.")
-                                return text
-                        raise ValueError(f"Gemini API returned 200 OK but structure was unexpected: {json.dumps(data)}")
+                    if retry > 0:
+                        logger.info(f"Attempting API request (Retry {retry}/{max_retries}) using key index {index} ({masked_key}) with model '{current_model}'...")
                     else:
-                        error_msg = f"HTTP {response.status_code}: {response.text}"
-                        logger.warning(f"Key index {index} failed with model '{current_model}': {error_msg}")
-                        errors.append(f"Key {index} ({masked_key}): {error_msg}")
+                        logger.info(f"Attempting API request using key index {index} ({masked_key}) with model '{current_model}'...")
+                    
+                    async with httpx.AsyncClient(timeout=60.0) as client:
+                        response = await client.post(url, headers=headers, json=payload)
                         
-            except PromptBlocked as pb:
-                logger.error(f"Safety block encountered: {pb}. Aborting key rotation.")
-                raise pb
-            except ValueError as ve:
-                error_msg = str(ve)
-                logger.warning(f"Key index {index} encountered ValueError with model '{current_model}': {error_msg}")
-                errors.append(f"Key {index} ({masked_key}) error: {error_msg}")
-            except Exception as e:
-                error_msg = str(e)
-                logger.warning(f"Key index {index} encountered exception with model '{current_model}': {error_msg}")
-                errors.append(f"Key {index} ({masked_key}) error: {error_msg}")
+                        if response.status_code == 200:
+                            data = response.json()
+                            
+                            # Check for promptFeedback block (safety/prohibited content)
+                            prompt_feedback = data.get("promptFeedback", {})
+                            block_reason = prompt_feedback.get("blockReason")
+                            if block_reason:
+                                raise PromptBlocked(block_reason, data)
+                            
+                            candidates = data.get("candidates", [])
+                            if candidates and len(candidates) > 0:
+                                candidate = candidates[0]
+                                finish_reason = candidate.get("finishReason")
+                                if finish_reason and finish_reason not in ("STOP", "MAX_TOKENS"):
+                                    raise PromptBlocked(finish_reason, data)
+                                
+                                parts = candidate.get("content", {}).get("parts", [])
+                                if parts and len(parts) > 0:
+                                    text = parts[0].get("text", "")
+                                    logger.info(f"API request succeeded with key index {index} using model '{current_model}'.")
+                                    return text
+                            raise ValueError(f"Gemini API returned 200 OK but structure was unexpected: {json.dumps(data)}")
+                        
+                        elif response.status_code == 429 or "resource_exhausted" in response.text.lower() or "quota" in response.text.lower():
+                            if retry < max_retries:
+                                delay = initial_delay * (backoff_factor ** (retry))
+                                logger.warning(f"Rate limit or Quota error (HTTP {response.status_code}) hit on key index {index}. Retrying in {delay:.1f}s...")
+                                await asyncio.sleep(delay)
+                                continue
+                            else:
+                                error_msg = f"HTTP {response.status_code}: {response.text}"
+                                logger.warning(f"Key index {index} failed after {max_retries} retries with model '{current_model}': {error_msg}")
+                                errors.append(f"Key {index} ({masked_key}): {error_msg}")
+                                break
+                        else:
+                            error_msg = f"HTTP {response.status_code}: {response.text}"
+                            logger.warning(f"Key index {index} failed with HTTP code {response.status_code} on model '{current_model}': {error_msg}")
+                            errors.append(f"Key {index} ({masked_key}): {error_msg}")
+                            break
+                            
+                except PromptBlocked as pb:
+                    logger.error(f"Safety block encountered: {pb}. Aborting key rotation.")
+                    raise pb
+                except ValueError as ve:
+                    error_msg = str(ve)
+                    logger.warning(f"Key index {index} encountered ValueError: {error_msg}")
+                    errors.append(f"Key {index} ({masked_key}) error: {error_msg}")
+                    break
+                except Exception as e:
+                    error_msg = str(e)
+                    if retry < max_retries:
+                        delay = initial_delay * (backoff_factor ** (retry))
+                        logger.warning(f"Connection or timeout error: {error_msg}. Retrying in {delay:.1f}s...")
+                        await asyncio.sleep(delay)
+                        continue
+                    else:
+                        logger.warning(f"Key index {index} encountered exception with model '{current_model}' after {max_retries} retries: {error_msg}")
+                        errors.append(f"Key {index} ({masked_key}) error: {error_msg}")
+                        break
                 
         # If we exited the key loop, all keys failed for this model
         all_errors_summary = " | ".join(errors)

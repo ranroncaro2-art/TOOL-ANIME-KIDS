@@ -447,11 +447,15 @@ def main():
 
         # Load source frames
         source_frames = []
+        src_fps = fps
         
         # Scenario A: We have a video segment
         if video_local:
             try:
                 cap = cv2.VideoCapture(video_local)
+                file_fps = cap.get(cv2.CAP_PROP_FPS)
+                if file_fps and file_fps > 0:
+                    src_fps = file_fps
                 while True:
                     ret, frame = cap.read()
                     if not ret:
@@ -478,10 +482,15 @@ def main():
 
         for f_i in range(budget):
             if len(source_frames) > 0:
-                # Play at normal 1-to-1 speed. Trim if shot is shorter, freeze on last frame if video source is shorter.
-                # Absolutely no looping under any circumstances.
-                idx = min(f_i, len(source_frames) - 1)
-                frame = source_frames[idx].copy()
+                if video_local:
+                    # Play at correct speed based on original framerate mapping
+                    src_frame_idx = int(round((f_i / fps) * src_fps))
+                    src_frame_idx = min(src_frame_idx, len(source_frames) - 1)
+                    frame = source_frames[src_frame_idx].copy()
+                else:
+                    # Play image Ken Burns frame
+                    img_idx = min(f_i, len(source_frames) - 1)
+                    frame = source_frames[img_idx].copy()
             else:
                 # Scenario C: Fallback animated graphic card
                 frame = generate_fallback_frame(

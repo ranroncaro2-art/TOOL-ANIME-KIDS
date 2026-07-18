@@ -1120,18 +1120,40 @@ class BackgroundQueueManager {
     this.notifyMediaQueue();
     this.addLog(`[Hàng chờ] Bắt đầu vẽ ${task.type === "shot_video" ? "video" : "ảnh"} cho ${task.targetId} (Dự án: ${task.projectName})...`, "running", task.projectId);
 
-    try {
-      if (task.type === "shot_video") {
-        await this.executeVideoTask(task);
-      } else {
-        await this.executeImageTask(task);
+    const maxAttempts = 3;
+    let attempt = 0;
+    let success = false;
+    let lastError: any = null;
+
+    while (attempt < maxAttempts && !success) {
+      attempt++;
+      try {
+        if (attempt > 1) {
+          this.addLog(`[Hàng chờ] Thử lại lần ${attempt}/${maxAttempts} cho ${task.targetId}...`, "running", task.projectId);
+        }
+        if (task.type === "shot_video") {
+          await this.executeVideoTask(task);
+        } else {
+          await this.executeImageTask(task);
+        }
+        success = true;
+      } catch (err: any) {
+        lastError = err;
+        this.addLog(`[Hàng chờ] Thử lần ${attempt}/${maxAttempts} thất bại cho ${task.targetId}: ${err.message}`, "error", task.projectId);
+        if (attempt < maxAttempts) {
+          // Wait 3 seconds before retrying
+          await new Promise(resolve => setTimeout(resolve, 3000));
+        }
       }
+    }
+
+    if (success) {
       task.status = "success";
       this.addLog(`[Hàng chờ] Đã vẽ xong ${task.type === "shot_video" ? "video" : "ảnh"} cho ${task.targetId}!`, "success", task.projectId);
-    } catch (err: any) {
+    } else {
       task.status = "failed";
-      task.error = err.message;
-      this.addLog(`[Hàng chờ] Lỗi vẽ ${task.type === "shot_video" ? "video" : "ảnh"} cho ${task.targetId}: ${err.message}`, "error", task.projectId);
+      task.error = lastError?.message || "Unknown error after 3 attempts";
+      this.addLog(`[Hàng chờ] Thất bại sau ${maxAttempts} lần thử. Dừng vẽ ${task.type === "shot_video" ? "video" : "ảnh"} cho ${task.targetId}.`, "error", task.projectId);
     }
 
     this.notifyMediaQueue();
@@ -1176,22 +1198,7 @@ class BackgroundQueueManager {
         throw new Error(data.error || "No image was returned from local API.");
       }
     } catch (err: any) {
-      this.addLog(`[Local API] Không kết nối được API vẽ ảnh hoặc API báo lỗi: ${err.message}. Tự động kích hoạt cơ chế giả lập (Mock).`, "info", task.projectId);
-      const mockUuid = `mock_${Math.random().toString(36).substring(2, 15)}`;
-      data = {
-        success: true,
-        images: [
-          {
-            index: 1,
-            url: `https://picsum.photos/seed/${mockUuid}/800/450`,
-            media_id: mockUuid
-          }
-        ],
-        total_generated: 1,
-        account_id: payload.account_id || "mock_account",
-        project_id: task.projectId,
-        acc_type: "both"
-      };
+      throw err;
     }
 
     const result = {
@@ -1343,18 +1350,7 @@ class BackgroundQueueManager {
         throw new Error(data.error || "No video was returned from local API.");
       }
     } catch (err: any) {
-      this.addLog(`[Local API] Không kết nối được API vẽ video hoặc API báo lỗi: ${err.message}. Tự động kích hoạt cơ chế giả lập (Mock).`, "info", task.projectId);
-      const mockUuid = `mock_${Math.random().toString(36).substring(2, 15)}`;
-      data = {
-        success: true,
-        videos: [
-          {
-            index: 1,
-            url: "https://assets.mixkit.co/videos/preview/mixkit-forest-stream-in-the-sunlight-529-large.mp4",
-            media_id: mockUuid
-          }
-        ]
-      };
+      throw err;
     }
 
     let videoUrl = data.videos[0].url;

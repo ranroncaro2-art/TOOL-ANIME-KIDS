@@ -41,7 +41,7 @@ if not exist node_modules (
 cd ..
 
 echo.
-echo [3/3] Starting Backend & Frontend Servers...
+echo [3/3] Starting Backend and Frontend Servers...
 echo.
 echo ---------------------------------------------------
 echo  * Backend running at: http://127.0.0.1:8000

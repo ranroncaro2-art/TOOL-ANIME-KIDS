@@ -37,6 +37,9 @@ class CharacterAsset(BaseModel):
     personality: str = Field(description="Personality traits (e.g. energetic, shy, friendly).")
     turnaround_prompt: str = Field(description="Turnaround prompt for reference image generation.")
     prompt: str = Field(description="Duplicate of turnaround_prompt for backwards compatibility.")
+    media_id: Optional[str] = Field(default="", description="The media ID of the character reference image.")
+    account_id: Optional[str] = Field(default="", description="The account ID associated with the character reference image.")
+    url: Optional[str] = Field(default="", description="The URL of the character reference image.")
 
 class CharacterExtractorResponse(BaseModel):
     characters: List[CharacterAsset] = Field(description="List of all unique characters extracted from the storyboard with reference prompts.")
@@ -46,6 +49,9 @@ class EnvironmentAsset(BaseModel):
     name: str = Field(description="The name of the location.")
     reference_prompt: str = Field(description="A highly detailed reference image prompt for the environment.")
     prompt: str = Field(description="Duplicate of reference_prompt for backwards compatibility.")
+    media_id: Optional[str] = Field(default="", description="The media ID of the environment reference image.")
+    account_id: Optional[str] = Field(default="", description="The account ID associated with the environment reference image.")
+    url: Optional[str] = Field(default="", description="The URL of the environment reference image.")
 
 class EnvironmentExtractorResponse(BaseModel):
     environments: List[EnvironmentAsset] = Field(description="List of all unique environment environments extracted from the storyboard with reference prompts.")
@@ -55,6 +61,9 @@ class PropAsset(BaseModel):
     name: str = Field(description="The name of the prop object.")
     reference_prompt: str = Field(description="A highly detailed reference image prompt for the prop.")
     prompt: str = Field(description="Duplicate of reference_prompt for backwards compatibility.")
+    media_id: Optional[str] = Field(default="", description="The media ID of the prop reference image.")
+    account_id: Optional[str] = Field(default="", description="The account ID associated with the prop reference image.")
+    url: Optional[str] = Field(default="", description="The URL of the prop reference image.")
 
 class PropExtractorResponse(BaseModel):
     props: List[PropAsset] = Field(description="List of all unique props extracted from the storyboard with reference prompts.")

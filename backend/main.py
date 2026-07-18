@@ -52,7 +52,7 @@ class AssetsRequest(BaseModel):
     api_keys: List[str]
     model: str
     rpm_limit: int = 5
-    chunk_size: int = 3
+    chunk_size: int = 5
 
 class ShotsRequest(BaseModel):
     storyboard: Optional[str] = None
@@ -63,7 +63,7 @@ class ShotsRequest(BaseModel):
     api_keys: List[str]
     model: str
     rpm_limit: int = 5
-    chunk_size: int = 3
+    chunk_size: int = 5
 
 class KeyframesRequest(BaseModel):
     shots: List[Shot]
@@ -73,7 +73,7 @@ class KeyframesRequest(BaseModel):
     api_keys: List[str]
     model: str
     rpm_limit: int = 5
-    chunk_size: int = 3
+    chunk_size: int = 5
 
 class MotionRequest(BaseModel):
     storyboard: str
@@ -85,7 +85,7 @@ class MotionRequest(BaseModel):
     api_keys: List[str]
     model: str
     rpm_limit: int = 5
-    chunk_size: int = 3
+    chunk_size: int = 5
     custom_instructions: Optional[str] = None
 
 class ExportRequest(BaseModel):
